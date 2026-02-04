@@ -9,6 +9,7 @@ export default function Home() {
       <nav style={{ display: "flex", gap: 12, marginTop: 16 }}>
         <Link to="/posts">게시판</Link>
         <Link to="/login">로그인</Link>
+        <Link to="/signup">회원가입</Link>
         <Link to="/posts/write">글쓰기</Link>
       </nav>
 

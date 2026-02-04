@@ -1,53 +1,60 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8080";
 
-type MeRes = {
-  id: number;
-  username: string;
-  role: string;
-};
-
-export default function Login() {
+export default function Signup() {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [me, setMe] = useState<MeRes | null>(null);
+  const [done, setDone] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setDone(false);
+
+    if (!username.trim()) {
+      setError("아이디를 입력해주세요.");
+      return;
+    }
+    if (password.length < 4) {
+      setError("비밀번호는 4자 이상으로 해주세요.");
+      return;
+    }
+    if (password !== password2) {
+      setError("비밀번호가 서로 달라요.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // ✅ 세션 쿠키 필수
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || `로그인 실패 (HTTP ${res.status})`);
+        throw new Error(text || `회원가입 실패 (HTTP ${res.status})`);
       }
 
-      // 백엔드가 CommonResponse 형태라면 여기서 파싱해서 data만 쓰면 됨.
-      // 일단 최대한 유연하게 처리:
-      const json = await res.json().catch(() => null);
-      const data = json?.data ?? json; // CommonResponse면 data, 아니면 json 자체
-      setMe(data);
+      setDone(true);
 
-      navigate("/posts");
+      // 회원가입 후 바로 로그인 페이지로 이동
+      setTimeout(() => navigate("/login"), 400);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "로그인 중 오류가 발생했습니다.";
-      setError(message);
+      const msg =
+        err instanceof Error ? err.message : "회원가입 중 오류가 발생했습니다.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -55,7 +62,7 @@ export default function Login() {
 
   return (
     <div style={{ padding: 24, maxWidth: 420 }}>
-      <h2>로그인</h2>
+      <h2>회원가입</h2>
 
       <form
         onSubmit={onSubmit}
@@ -77,31 +84,38 @@ export default function Login() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete="new-password"
             placeholder="password"
           />
         </label>
 
+        <label style={{ display: "grid", gap: 6 }}>
+          <span>비밀번호 확인</span>
+          <input
+            type="password"
+            value={password2}
+            onChange={(e) => setPassword2(e.target.value)}
+            autoComplete="new-password"
+            placeholder="password again"
+          />
+        </label>
+
         <button type="submit" disabled={loading}>
-          {loading ? "로그인 중..." : "로그인"}
+          {loading ? "가입 중..." : "회원가입"}
         </button>
 
         {error && <p style={{ color: "crimson" }}>{error}</p>}
-        {me && (
+        {done && (
           <p style={{ color: "green" }}>
-            로그인 성공: {me.username} ({me.role})
+            회원가입 완료! 로그인 페이지로 이동합니다.
           </p>
         )}
       </form>
 
-      <p style={{ marginTop: 12, color: "#666" }}>
-        백엔드 세션 기반이므로 fetch에 <code>credentials: "include"</code>가 꼭
-        들어가야 해요.
-      </p>
-
-      <p style={{ marginTop: 12 }}>
-        계정이 없나요? <Link to="/signup">회원가입</Link>
-      </p>
+      <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+        <Link to="/login">로그인</Link>
+        <Link to="/">홈</Link>
+      </div>
     </div>
   );
 }

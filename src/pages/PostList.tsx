@@ -31,7 +31,15 @@ export default function PostList() {
 
       const json = await res.json().catch(() => null);
       const data = json?.data ?? json; // CommonResponse면 data
-      setItems(Array.isArray(data) ? data : (data?.items ?? []));
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.content)
+          ? data.content
+          : Array.isArray(data?.items)
+            ? data.items
+            : [];
+
+      setItems(list);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "로그인 중 오류가 발생했습니다.";
